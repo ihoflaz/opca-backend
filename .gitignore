@@ -1,0 +1,44 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+package-lock.json
+.cursor/
+docs/
+# Ortam değişkenleri
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.example
+env.example
+# Derleme klasörleri
+dist/
+build/
+coverage/
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+api.json
+
+# IDE ve editör klasörleri
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.md
+*.csv
+
+# Log dosyaları
+logs/
+*.log
+
+# AI modeller
+*.weights
+*.h5
+*.pb
+*.tflite 
