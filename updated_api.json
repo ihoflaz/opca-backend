@@ -1,0 +1,652 @@
+{
+  "info": {
+    "_postman_id": "b8e2e3a4-6f5c-4e7d-8a9b-2c3d4e5f6a7b",
+    "name": "OpCa API",
+    "description": "OpCa Veteriner Tanı Uygulaması API'si\n\n## Genel Özellikler\n\n### Rate Limiting (İstek Sınırlama)\nAPI istekleri, sunucu performansını korumak ve güvenliği artırmak için sınırlandırılmıştır:\n\n- **Auth İstekleri**: IP başına 15 dakikada maksimum 10 istek (/api/auth/ endpoint'leri)\n- **Dosya Yükleme**: IP başına dakikada maksimum 10 istek (/api/upload/ ve /api/analysis/mobile/ endpoint'leri)\n- **Genel API İstekleri**: IP başına dakikada maksimum 60 istek (diğer tüm endpoint'ler)\n\nRate limit aşıldığında, API \"429 Too Many Requests\" hata kodu ile yanıt verecektir.\n\n### Önbellekleme (Caching)\nPerformansı artırmak için bazı endpoint'ler önbellekleme mekanizması içerir:\n\n- **Analiz Sonuçları**: Tekrarlanan analiz detayı istekleri 5 dakika önbelleğe alınır\n- **Analiz Geçmişi**: Geçmiş listeleri 2 dakika önbelleğe alınır\n\n### Offline Mod Senkronizasyonu\nMobil uygulama offline modda çalışabilir ve analiz sonuçlarını yerel olarak saklayabilir:\n\n- Tekli analiz sonuçları: `/api/analysis/mobile/parasite` veya `/api/analysis/mobile/mnist` endpoint'leri aracılığıyla gönderilebilir\n- Toplu analiz sonuçları: Çevrimdışı modda biriken çoklu analiz sonuçları, internet bağlantısı sağlandığında `/api/analysis/batch-upload` endpoint'i aracılığıyla tek seferde gönderilebilir",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Kimlik doğrulama işlemleri",
+      "item": [
+        {
+          "name": "Kayıt Ol",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Kullanıcı\",\n    \"email\": \"test@example.com\",\n    \"password\": \"Test123!\",\n    \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Yeni kullanıcı oluşturma\n\n### Notlar\n- Rate limit: 15 dakikada maksimum 10 istek\n- Tekrarlanan başarısız denemeler geçici olarak engellenebilir"
+          }
+        },
+        {
+          "name": "Giriş Yap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.environment.set(\"access_token\", jsonData.accessToken);",
+                  "pm.environment.set(\"refresh_token\", jsonData.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"Test123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Kullanıcı girişi\n\n### Yanıt formatı\n```json\n{\n  \"success\": true,\n  \"accessToken\": \"jwt-token\",\n  \"refreshToken\": \"refresh-token\",\n  \"expiresIn\": 3600\n}\n```\n\n### Notlar\n- `accessToken`: 1 saat geçerli JWT token\n- `refreshToken`: 7 gün geçerli yenileme token'ı\n- `expiresIn`: Token geçerlilik süresi (saniye)\n- Rate limit: 15 dakikada maksimum 10 istek\n- Tekrarlanan başarısız denemeler geçici olarak engellenebilir"
+          }
+        },
+        {
+          "name": "Token Yenile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.environment.set(\"access_token\", jsonData.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh-token"]
+            },
+            "description": "Refresh token ile yeni access token alma\n\n### Notlar\n- Rate limit: 15 dakikada maksimum 10 istek\n- Geçersiz veya süresi dolmuş refresh token ile yapılan istekler 401 hata kodu ile yanıtlanır"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Parazit İşlemleri",
+      "description": "Parazit bilgisi işlemleri",
+      "item": [
+        {
+          "name": "Tüm Parazitleri Getir",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parasites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parasites"]
+            },
+            "description": "Tüm parazit bilgilerini getir"
+          }
+        },
+        {
+          "name": "Parazit Detayı",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/parasites/Neosporosis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parasites", "Neosporosis"]
+            },
+            "description": "Belirli bir parazit türünün detaylarını getir"
+          }
+        },
+        {
+          "name": "Parazit Ekle (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"Neosporosis\",\n    \"name\": \"Neospora caninum\",\n    \"description\": \"Neospora caninum, tek hücreli bir parazittir ve sığırlarda yavru atmaya sebep olur.\",\n    \"treatment\": \"Spesifik bir tedavi bulunmamaktadır, ancak bazı ilaçlar kullanılabilir.\",\n    \"preventionMeasures\": [\n        \"Köpeklerle teması sınırlandırma\",\n        \"Yem ve su kaynaklarını koruma\",\n        \"Ölü doğan buzağıları uygun şekilde imha etme\"\n    ],\n    \"imageUrls\": [\n        \"https://example.com/neospora1.jpg\",\n        \"https://example.com/neospora2.jpg\"\n    ],\n    \"examples\": [\n        {\n            \"imageUrl\": \"https://example.com/neospora_example1.jpg\",\n            \"description\": \"Mikroskop altında Neospora caninum kisti\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/parasites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "parasites"]
+            },
+            "description": "Yeni parazit bilgisi ekle (Admin rolü gerekli)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Rakam İşlemleri",
+      "description": "MNIST rakam bilgisi işlemleri",
+      "item": [
+        {
+          "name": "Tüm Rakamları Getir",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/digits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digits"]
+            },
+            "description": "Tüm rakam bilgilerini getir"
+          }
+        },
+        {
+          "name": "Rakam Detayı",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/digits/5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digits", "5"]
+            },
+            "description": "Belirli bir rakamın detaylarını getir"
+          }
+        },
+        {
+          "name": "Rakam Ekle (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"value\": 5,\n    \"description\": \"Beş rakamı\",\n    \"examples\": [\n        {\n            \"imageUrl\": \"https://example.com/digit_5_example1.jpg\",\n            \"description\": \"El yazısı 5 örneği\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/digits",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digits"]
+            },
+            "description": "Yeni rakam bilgisi ekle (Admin rolü gerekli)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Dosya Yükleme",
+      "description": "Dosya yükleme işlemleri",
+      "item": [
+        {
+          "name": "Görüntü Yükle",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "/path/to/your/image.jpg"
+                },
+                {
+                  "key": "folder",
+                  "value": "images",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload/image",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload", "image"]
+            },
+            "description": "Tek görüntü dosyası yükle\n\n### Desteklenen Formatlar\n- JPEG/JPG\n- PNG\n\n### Notlar\n- Maksimum dosya boyutu: 10MB\n- Rate limit: 1 dakikada maksimum 10 istek\n- Yüklenen görüntüler otomatik olarak optimize edilir\n- Thumbnail otomatik olarak oluşturulur"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Analiz",
+      "description": "Analiz sonuçlarını saklama ve görüntüleme işlemleri",
+      "item": [
+        {
+          "name": "Parazit Analiz Sonucu Gönder",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "/path/to/your/parasite_image.jpg"
+                },
+                {
+                  "key": "results",
+                  "value": "[{\"type\":\"Neosporosis\",\"confidence\":0.75},{\"type\":\"Echinococcosis\",\"confidence\":0.15},{\"type\":\"Coenurosis\",\"confidence\":0.10}]",
+                  "type": "text"
+                },
+                {
+                  "key": "processingTimeMs",
+                  "value": "350",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "Ankara, Türkiye",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "Cihazda işlenmiş parazit analizi",
+                  "type": "text"
+                },
+                {
+                  "key": "modelName",
+                  "value": "parasite-mobilenet",
+                  "type": "text"
+                },
+                {
+                  "key": "modelVersion",
+                  "value": "1.0.0",
+                  "type": "text"
+                },
+                {
+                  "key": "deviceInfo",
+                  "value": "Android 13 / Samsung Galaxy S22",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis/mobile/parasite",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "mobile", "parasite"]
+            },
+            "description": "Cihazda işlenmiş parazit analiz sonucunu sunucuya gönder"
+          }
+        },
+        {
+          "name": "MNIST Analiz Sonucu Gönder",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "/path/to/your/digit_image.jpg"
+                },
+                {
+                  "key": "results",
+                  "value": "[{\"value\":5,\"confidence\":0.85},{\"value\":3,\"confidence\":0.10},{\"value\":8,\"confidence\":0.05}]",
+                  "type": "text"
+                },
+                {
+                  "key": "processingTimeMs",
+                  "value": "180",
+                  "type": "text"
+                },
+                {
+                  "key": "notes",
+                  "value": "Cihazda işlenmiş MNIST analizi",
+                  "type": "text"
+                },
+                {
+                  "key": "modelName",
+                  "value": "mnist-convnet",
+                  "type": "text"
+                },
+                {
+                  "key": "modelVersion",
+                  "value": "1.0.0",
+                  "type": "text"
+                },
+                {
+                  "key": "deviceInfo",
+                  "value": "iOS 16.5 / iPhone 14 Pro",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis/mobile/mnist",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "mobile", "mnist"]
+            },
+            "description": "Cihazda işlenmiş MNIST analiz sonucunu sunucuya gönder"
+          }
+        },
+        {
+          "name": "Toplu Analiz Sonuçları Gönder",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analyses\": [\n    {\n      \"localId\": \"local-uuid-1\",\n      \"type\": \"Parasite\",\n      \"imageBase64\": \"base64-encoded-image-data\",\n      \"results\": [\n        {\"type\":\"Neosporosis\",\"confidence\":0.75},\n        {\"type\":\"Echinococcosis\",\"confidence\":0.15},\n        {\"type\":\"Coenurosis\",\"confidence\":0.10}\n      ],\n      \"processingTimeMs\": 350,\n      \"location\": \"Ankara, Türkiye\",\n      \"notes\": \"Offline modda kaydedilmiş parazit analizi\",\n      \"modelName\": \"parasite-mobilenet\",\n      \"modelVersion\": \"1.0.0\",\n      \"deviceInfo\": \"Android 13 / Samsung Galaxy S22\",\n      \"createdAt\": \"2023-08-15T14:30:45.000Z\"\n    },\n    {\n      \"localId\": \"local-uuid-2\",\n      \"type\": \"MNIST\",\n      \"imageBase64\": \"base64-encoded-image-data\",\n      \"results\": [\n        {\"value\":5,\"confidence\":0.85},\n        {\"value\":3,\"confidence\":0.10},\n        {\"value\":8,\"confidence\":0.05}\n      ],\n      \"processingTimeMs\": 180,\n      \"notes\": \"Offline modda kaydedilmiş MNIST analizi\",\n      \"modelName\": \"mnist-convnet\",\n      \"modelVersion\": \"1.0.0\",\n      \"deviceInfo\": \"iOS 16.5 / iPhone 14 Pro\",\n      \"createdAt\": \"2023-08-15T15:45:30.000Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analysis/batch-upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "batch-upload"]
+            },
+            "description": "Offline modda biriken analiz sonuçlarını toplu olarak sunucuya gönder\n\n### Yanıt formatı\n\n```json\n{\n  \"success\": true,\n  \"results\": [\n    {\"localId\": \"local-uuid-1\", \"serverId\": \"server-id-1\", \"status\": \"success\"},\n    {\"localId\": \"local-uuid-2\", \"status\": \"error\", \"message\": \"Validation failed\"}\n  ],\n  \"successCount\": 1,\n  \"errorCount\": 1,\n  \"totalCount\": 2\n}\n```\n\n### Notlar\n- `localId`: Mobil uygulamada oluşturulan benzersiz ID\n- `serverId`: Sunucuda oluşturulan analiz ID (başarılı kayıtlar için)\n- Rate limit: 1 dakikada maksimum 10 istek\n- Dosya boyutu: Toplam istek boyutu 100MB'ı aşmamalıdır\n- Her görüntü ayrı ayrı işlenir, bazıları başarılı bazıları başarısız olabilir"
+          }
+        },
+        {
+          "name": "Analiz Detayı",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analysis/results/{{analysis_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "results", "{{analysis_id}}"]
+            },
+            "description": "Belirli bir analiz sonucunu getir\n\n### Notlar\n- Bu endpoint önbellekleme kullanır (5 dakika)\n- Aynı analiz ID'si için tekrarlanan istekler önbellekten sunulur\n- Rate limit: 1 dakikada maksimum 60 istek"
+          }
+        },
+        {
+          "name": "Analiz Geçmişi",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analysis/history?page=1&limit=10&type=Parasite",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analysis", "history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "Parasite"
+                }
+              ]
+            },
+            "description": "Kullanıcının analiz geçmişini getir\n\n### Sorgu parametreleri\n- `page`: Sayfa numarası (varsayılan: 1)\n- `limit`: Sayfa başına sonuç sayısı (varsayılan: 10, maksimum: 100)\n- `type`: Analiz tipi filtresi (\"Parasite\" veya \"MNIST\")\n- `startDate`: Başlangıç tarihi (ISO 8601 formatı, örn: 2023-08-01T00:00:00Z)\n- `endDate`: Bitiş tarihi (ISO 8601 formatı)\n\n### Notlar\n- Bu endpoint önbellekleme kullanır (2 dakika)\n- Rate limit: 1 dakikada maksimum 60 istek"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Model Versiyon Kontrolü",
+      "description": "Mobil uygulama içindeki gömülü modellerin versiyon kontrolü",
+      "item": [
+        {
+          "name": "Mevcut Model Versiyonları",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/models",
+              "host": ["{{base_url}}"],
+              "path": ["api", "models"]
+            },
+            "description": "Mevcut tüm model versiyonlarını listele (güncelleme kontrolü için)"
+          }
+        },
+        {
+          "name": "Parazit Modeli Metadata",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/models/parasite/parasite-mobilenet/1.0.0/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["api", "models", "parasite", "parasite-mobilenet", "1.0.0", "metadata"]
+            },
+            "description": "Parazit modeli metadata bilgilerini getir"
+          }
+        },
+        {
+          "name": "MNIST Modeli Metadata",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/models/mnist/mnist-convnet/1.0.0/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["api", "models", "mnist", "mnist-convnet", "1.0.0", "metadata"]
+            },
+            "description": "MNIST modeli metadata bilgilerini getir"
+          }
+        },
+        {
+          "name": "Parazit Modeli Güncelleme Kontrolü",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/models/parasite/parasite-mobilenet/1.0.0/check-update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "models", "parasite", "parasite-mobilenet", "1.0.0", "check-update"]
+            },
+            "description": "Parazit modeli için güncelleme olup olmadığını kontrol et"
+          }
+        },
+        {
+          "name": "MNIST Modeli Güncelleme Kontrolü",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/models/mnist/mnist-convnet/1.0.0/check-update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "models", "mnist", "mnist-convnet", "1.0.0", "check-update"]
+            },
+            "description": "MNIST modeli için güncelleme olup olmadığını kontrol et"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5002",
+      "type": "string"
+    }
+  ]
+} 

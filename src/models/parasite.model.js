@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const parasiteSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['Neosporosis', 'Echinococcosis', 'Coenurosis'],
+    enum: ['Neosporosis', 'Echinococcosis', 'Coenurosis', 'Toxoplasmosis', 'Cryptosporidiosis'],
     required: true,
     unique: true
   },

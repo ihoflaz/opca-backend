@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const parasiteResultSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['Neosporosis', 'Echinococcosis', 'Coenurosis'],
+    enum: ['Neosporosis', 'Echinococcosis', 'Coenurosis', 'Toxoplasmosis', 'Cryptosporidiosis'],
     required: true
   },
   confidence: {
@@ -73,11 +73,15 @@ const analysisSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // Mobil cihaz model bilgileri
-  mobileModelInfo: {
-    modelName: String,
-    modelVersion: String,
-    deviceInfo: String
+  // Model bilgileri
+  modelName: {
+    type: String
+  },
+  modelVersion: {
+    type: String
+  },
+  deviceInfo: {
+    type: String
   },
   uploadTimestamp: {
     type: Date,

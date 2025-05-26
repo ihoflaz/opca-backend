@@ -15,6 +15,9 @@ const uploadRoutes = require('./routes/upload.routes');
 const analysisRoutes = require('./routes/analysis.routes');
 const parasiteRoutes = require('./routes/parasite.routes');
 const digitRoutes = require('./routes/digit.routes');
+const modelRoutes = require('./routes/model.routes');
+const mobileRoutes = require('./routes/mobile.routes');
+const userRoutes = require('./routes/user.routes');
 
 // Uygulama oluştur
 const app = express();
@@ -36,6 +39,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/parasites', parasiteRoutes);
 app.use('/api/digits', digitRoutes);
+app.use('/api/models', modelRoutes);
+app.use('/api/analysis/mobile', mobileRoutes);
+app.use('/api/users', userRoutes);
 
 // Ana rota
 app.get('/', (req, res) => {

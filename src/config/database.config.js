@@ -41,10 +41,10 @@ const connectDatabase = async (uri) => {
     // MongoDB'ye bağlan
     await mongoose.connect(uri, options);
     
-    // Debug modunda Mongoose sorgularını logla
-    if (process.env.NODE_ENV === 'development') {
-      mongoose.set('debug', true);
-    }
+    // Debug modunda Mongoose sorgularını logla (kapatıldı)
+    // if (process.env.NODE_ENV === 'development') {
+    //   mongoose.set('debug', true);
+    // }
     
     // Bağlantı olaylarını dinle
     mongoose.connection.on('connected', () => {

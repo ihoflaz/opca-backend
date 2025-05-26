@@ -5,7 +5,12 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest"
+    "test": "jest",
+    "s3:setup": "node setup-s3-structure.js setup",
+    "s3:list": "node setup-s3-structure.js list",
+    "s3:upload": "node upload-real-images.js upload",
+    "s3:folders": "node upload-real-images.js setup-folders",
+    "s3:test": "node upload-real-images.js test"
   },
   "keywords": [],
   "author": "",
@@ -25,9 +30,11 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "memory-cache": "^0.2.0",
     "mongoose": "^8.15.0",
     "multer": "^2.0.0",
     "sharp": "^0.34.2"

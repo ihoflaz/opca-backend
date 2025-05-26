@@ -20,10 +20,10 @@ const appConfig = {
   isTest: environment === 'test',
   
   // Sunucu portu
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '5002', 10),
   
   // API endpoint ana URL
-  apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3000',
+  apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:5002',
   
   // API versiyonu
   apiVersion: process.env.API_VERSION || 'v1',

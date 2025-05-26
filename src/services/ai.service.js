@@ -86,9 +86,15 @@ class AiService {
     // Zaman geçmesini simüle et
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    // Kullanılan model bilgilerini ekle
+    const modelName = 'parasite-model-v2';
+    const modelVersion = '2.0.0';
+    
     return {
       results,
-      processingTimeMs: Date.now() - startTime
+      processingTimeMs: Date.now() - startTime,
+      modelName,
+      modelVersion
     };
   }
   
@@ -110,9 +116,15 @@ class AiService {
     // Zaman geçmesini simüle et
     await new Promise(resolve => setTimeout(resolve, 300));
     
+    // Kullanılan model bilgilerini ekle
+    const modelName = 'mnist-model-v1';
+    const modelVersion = '1.0.0';
+    
     return {
       results,
-      processingTimeMs: Date.now() - startTime
+      processingTimeMs: Date.now() - startTime,
+      modelName,
+      modelVersion
     };
   }
   

@@ -210,7 +210,7 @@ const analysisValidationRules = {
     
     query('limit')
       .optional()
-      .isInt({ min: 1, max: 100 }).withMessage('Limit 1-100 arasında olmalıdır')
+      .isInt({ min: 1, max: 1000 }).withMessage('Limit 1-1000 arasında olmalıdır')
       .toInt(),
     
     query('type')
@@ -229,6 +229,48 @@ const analysisValidationRules = {
     query('endDate')
       .optional()
       .isISO8601().withMessage('Geçerli bir tarih formatı gereklidir')
+  ],
+
+  // Admin analiz geçmişi için validation
+  adminHistory: [
+    query('page')
+      .optional()
+      .isInt({ min: 1 }).withMessage('Sayfa numarası pozitif bir tamsayı olmalıdır')
+      .toInt(),
+    
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 }).withMessage('Limit 1-100 arasında olmalıdır')
+      .toInt(),
+    
+    query('type')
+      .optional()
+      .isIn(['Parasite', 'MNIST']).withMessage('Geçersiz analiz tipi'),
+    
+    query('userId')
+      .optional()
+      .isMongoId().withMessage('Geçerli bir kullanıcı ID formatı gereklidir'),
+    
+    query('processedOnMobile')
+      .optional()
+      .isBoolean().withMessage('processedOnMobile değeri boolean olmalıdır')
+      .toBoolean(),
+    
+    query('startDate')
+      .optional()
+      .isISO8601().withMessage('Geçerli bir tarih formatı gereklidir'),
+    
+    query('endDate')
+      .optional()
+      .isISO8601().withMessage('Geçerli bir tarih formatı gereklidir'),
+
+    query('sortBy')
+      .optional()
+      .isIn(['createdAt', 'updatedAt', 'analysisType', 'processingTimeMs']).withMessage('Geçersiz sıralama alanı'),
+
+    query('sortOrder')
+      .optional()
+      .isIn(['asc', 'desc']).withMessage('Sıralama yönü asc veya desc olmalıdır')
   ]
 };
 

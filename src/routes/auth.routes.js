@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const authController = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
+const rateLimitMiddleware = require('../middleware/rate-limit.middleware');
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ const router = express.Router();
  */
 router.post(
   '/register',
+  rateLimitMiddleware.authLimiter,
   [
     body('name').trim().notEmpty().withMessage('Ad alanı gereklidir'),
     body('email').isEmail().withMessage('Geçerli bir e-posta adresi giriniz'),
@@ -29,6 +31,7 @@ router.post(
  */
 router.post(
   '/login',
+  rateLimitMiddleware.authLimiter,
   [
     body('email').isEmail().withMessage('Geçerli bir e-posta adresi giriniz'),
     body('password').notEmpty().withMessage('Şifre gereklidir')
@@ -43,6 +46,7 @@ router.post(
  */
 router.post(
   '/refresh-token',
+  rateLimitMiddleware.authLimiter,
   [
     body('refreshToken').notEmpty().withMessage('Refresh token gereklidir')
   ],
@@ -54,6 +58,6 @@ router.post(
  * @route GET /api/auth/me
  * @access Private
  */
-router.get('/me', protect, authController.getMe);
+router.get('/me', protect, rateLimitMiddleware.apiLimiter, authController.getMe);
 
 module.exports = router; 

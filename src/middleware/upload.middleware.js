@@ -20,7 +20,8 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB maksimum dosya boyutu
+    fileSize: 10 * 1024 * 1024, // 10MB maksimum dosya boyutu
+    files: 1 // Tek seferde maksimum 1 dosya
   },
   fileFilter: fileFilter
 });
@@ -38,7 +39,13 @@ exports.handleUploadError = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'Dosya boyutu 5MB sınırını aşıyor.'
+        message: 'Dosya boyutu 10MB sınırını aşıyor.'
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Tek seferde en fazla 1 dosya yüklenebilir.'
       });
     }
     return res.status(400).json({

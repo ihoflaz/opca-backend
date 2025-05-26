@@ -9,8 +9,8 @@ const User = require('../models/user.model');
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRATION }
+    process.env.JWT_SECRET || 'supersecret_opca_development_key',
+    { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY || '1h' }
   );
 };
 
@@ -22,8 +22,8 @@ const generateToken = (user) => {
 const generateRefreshToken = (user) => {
   return jwt.sign(
     { id: user._id },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION }
+    process.env.REFRESH_TOKEN_SECRET || 'refresh_secret_opca_development_key',
+    { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d' }
   );
 };
 
@@ -97,7 +97,7 @@ exports.login = async (email, password) => {
 exports.refreshToken = async (refreshToken) => {
   try {
     // Refresh token'ı doğrula
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || 'refresh_secret_opca_development_key');
     
     // Kullanıcıyı bul
     const user = await User.findById(decoded.id);

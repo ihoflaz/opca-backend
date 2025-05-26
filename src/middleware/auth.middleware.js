@@ -24,7 +24,7 @@ exports.authenticate = exports.protect = async (req, res, next) => {
 
     try {
       // Token'ı doğrula
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret_opca_development_key');
 
       // Kullanıcıyı bul ve isteğe ekle
       const user = await User.findById(decoded.id);

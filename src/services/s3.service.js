@@ -3,13 +3,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
-const awsConfig = require('../config/aws.config');
-
-// S3 istemcisini yapılandır
-const s3Client = new S3Client({
-  region: awsConfig.region,
-  credentials: awsConfig.credentials
-});
+const { s3Client, awsConfig } = require('../config/aws');
 
 // Alt klasörler
 const FOLDERS = awsConfig.folders;
